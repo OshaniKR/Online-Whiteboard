@@ -15,31 +15,22 @@ public class WhiteboardPanel extends JPanel {
 
     public WhiteboardPanel(ObjectOutputStream out) {
         this.out = out;
+        setBackground(Color.WHITE);
+        setLayout(new BorderLayout());
 
-        setBackground(Color.WHITE); // Set white background
+        // Drawing panel
+        DrawingCanvas canvas = new DrawingCanvas();
+        add(canvas, BorderLayout.CENTER);
 
-        // Mouse events for drawing
-        addMouseListener(new MouseAdapter() {
-            @Override
-            public void mousePressed(MouseEvent e) {
-                sendMessage(e.getX(), e.getY(), e.getX(), e.getY(), "draw");
-            }
-        });
+        // Toolbar for buttons
+        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT));
 
-        addMouseMotionListener(new MouseMotionAdapter() {
-            @Override
-            public void mouseDragged(MouseEvent e) {
-                if (!messages.isEmpty()) {
-                    DrawMessage last = messages.get(messages.size() - 1);
-                    sendMessage(last.x2, last.y2, e.getX(), e.getY(), "draw");
-                }
-            }
-        });
-
-        // Clear button to clear the drawing
+        // Clear button
         JButton clearButton = new JButton("Clear");
-        clearButton.addActionListener(e -> sendMessage(0, 0, 0, 0, "clear"));
-        add(clearButton);
+        clearButton.addActionListener(e -> {
+            messages.clear();
+            repaint();
+        });
 
         // Color picker button
         JButton colorPicker = new JButton("Color");
@@ -49,15 +40,15 @@ public class WhiteboardPanel extends JPanel {
                 currentColor = String.format("#%02x%02x%02x", newColor.getRed(), newColor.getGreen(), newColor.getBlue());
             }
         });
-        add(colorPicker);
 
-        setLayout(new FlowLayout(FlowLayout.LEFT)); // Set layout for buttons
+        toolbar.add(clearButton);
+        toolbar.add(colorPicker);
+        add(toolbar, BorderLayout.NORTH);
     }
 
-    // Send message to the output stream and update local message list
-    private void sendMessage(int x, int y, int x2, int y2, String action) {
+    private void sendMessage(int x, int y) {
         try {
-            DrawMessage message = new DrawMessage(x, y, x2, y2, currentColor, action);
+            DrawMessage message = new DrawMessage(x, y, currentColor);
             if (out != null) {
                 out.writeObject(message);
                 out.flush();
@@ -69,23 +60,28 @@ public class WhiteboardPanel extends JPanel {
         }
     }
 
-    // Apply received messages for drawing
     public void applyMessage(DrawMessage message) {
-        if (message.action.equals("clear")) {
-            messages.clear();
-        } else {
-            messages.add(message);
-        }
+        messages.add(message);
         repaint();
     }
 
-    // Draw all messages
-    @Override
-    protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
-        for (DrawMessage message : messages) {
-            g.setColor(Color.decode(message.color));
-            g.drawLine(message.x, message.y, message.x2, message.y2);
+    private class DrawingCanvas extends JPanel {
+        public DrawingCanvas() {
+            addMouseListener(new MouseAdapter() {
+                @Override
+                public void mousePressed(MouseEvent e) {
+                    sendMessage(e.getX(), e.getY());
+                }
+            });
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            for (DrawMessage message : messages) {
+                g.setColor(Color.decode(message.getColor()));
+                g.fillOval(message.getX(), message.getY(), 5, 5); // Draw a small dot at each point
+            }
         }
     }
 }

@@ -2,16 +2,23 @@ package Whiteboard;
 
 import java.io.Serializable;
 
-public class DrawMessage implements Serializable {
-    public int x, y, x2, y2;
-    public String color, action;
 
-    public DrawMessage(int x, int y, int x2, int y2, String color, String action) {
+public class DrawMessage implements Serializable {
+    private int x, y;
+    private String color;
+
+    public DrawMessage(int x, int y, String color) {
         this.x = x;
         this.y = y;
-        this.x2 = x2;
-        this.y2 = y2;
         this.color = color;
-        this.action = action;
+    }
+
+    public int getX() { return x; }
+    public int getY() { return y; }
+    public String getColor() { return color; }
+
+    @Override
+    public String toString() {
+        return "DrawMessage{x=" + x + ", y=" + y + ", color='" + color + "'}";
     }
 }
